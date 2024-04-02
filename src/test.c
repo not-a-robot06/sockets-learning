@@ -4,6 +4,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #define MYPORT "3582"
 #define BUF_LEN 256
@@ -13,7 +15,7 @@ main(void){
   struct sockaddr_storage in_addr;
   socklen_t addr_size;
   struct addrinfo hints, *res;
-  int sockfd, new_fd;
+  int sockfd, new_fd, yes = 1;
   char buf[BUF_LEN];
 
   memset(&hints, 0, sizeof hints);
@@ -24,12 +26,22 @@ main(void){
   getaddrinfo(NULL, MYPORT, &hints, &res);
 
   sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-  bind(sockfd, res->ai_addr, res->ai_addrlen);
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes) < 0) {
+    close(sockfd);
+    perror("setsockopt");
+    exit(1);
+  }
+  if (bind(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
+    close(sockfd);
+    perror("bind");
+    exit(1);
+  }
   listen(sockfd, 10);
 
   addr_size = sizeof in_addr;
   new_fd = accept(sockfd, (struct sockaddr *)&in_addr, &addr_size);
   close(sockfd);
+  freeaddrinfo(res);
 
   if (recv(new_fd, buf, BUF_LEN, 0) < 0)
     return 1;
