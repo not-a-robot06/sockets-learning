@@ -11,7 +11,7 @@ endif
 CFLAGS:=-Wall -Wextra -Wpedantic -std=c99 -D_POSIX_C_SOURCE=200112L -g3
 LDFLAGS:=
 DIRS:=bin
-BINS:=bin/test
+BINS:=bin/test bin/http
 
 all: dirs $(BINS)
 
